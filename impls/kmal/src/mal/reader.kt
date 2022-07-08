@@ -65,8 +65,7 @@ object Reader {
     val atomicCoercers = listOf(
         ::coerceToNil,
         ::coerceToBoolean,
-        ::coerceToInt,
-        ::coerceToFloat,
+        ::coerceToNumber,
         ::coerceToKeyword,
         ::coerceToString,
         ::coerceToSymbol // Should always be last.
