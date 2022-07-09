@@ -1,10 +1,14 @@
 package mal
 
-import mal.MalTypes.toKMalVector
-import kotlin.math.abs
-
 interface KMalType {
     fun toTypeString(): String
+}
+
+interface KMalSequence : KMalType {
+    val elements: List<KMalType>
+    val first: KMalType?
+    val rest: List<KMalType>?
+    val size: Int
 }
 
 interface KMalIgnorable : KMalType
@@ -21,24 +25,24 @@ object MalTypes {
         operator fun invoke(vararg types: KMalType) = invoke(types.toList())
     }
 
-    class KMalList(val elements: List<KMalType>) : KMalType {
+    class KMalList(override val elements: List<KMalType>) : KMalSequence {
         override fun toString() = "(${getSequenceString(elements)})"
         override fun toTypeString() = "List (${getSequenceTypes(elements)})"
         override fun hashCode() = elements.hashCode()
         override fun equals(other: Any?) = other is KMalList && other.elements == elements
-        val first = elements.firstOrNull()
-        val rest = if (elements.size >= 2) elements.subList(1, elements.size) else null
-        val size = elements.size
+        override val first = elements.firstOrNull()
+        override val rest = if (elements.size >= 2) elements.subList(1, elements.size) else null
+        override val size = elements.size
     }
 
-    class KMalVector(val elements: List<KMalType>) : KMalType {
+    class KMalVector(override val elements: List<KMalType>) : KMalSequence {
         override fun toString() = "[${getSequenceString(elements)}]"
         override fun toTypeString() = "Vector [${getSequenceTypes(elements)}]"
         override fun hashCode() = elements.hashCode()
         override fun equals(other: Any?) = other is KMalVector && other.elements == elements
-        val first = elements.firstOrNull()
-        val rest = if (elements.size >= 2) elements.subList(1, elements.size) else null
-        val size = elements.size
+        override val first = elements.firstOrNull()
+        override val rest = if (elements.size >= 2) elements.subList(1, elements.size) else null
+        override val size = elements.size
     }
 
     class KMalHashMap(val elements: Map<KMalType, KMalType>) : KMalType {

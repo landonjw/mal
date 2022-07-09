@@ -10,12 +10,13 @@ import mal.MalTypes.KMalVector
 import mal.MalTypes.toKMalVector
 import mal.MalTypes.KMalHashMap
 import mal.MalTypes.toKMalMap
+import mal.MalTypes.toKMalSymbol
 import mal.MalTypes.toList
 
 object Step2Eval {
     fun READ(input: String): KMalType = Reader.readAST(input)
 
-    private fun evalAST(ast: KMalType, environment: KMalEnvironment): KMalType {
+    private fun evalAST(ast: KMalType, environment: Map<KMalSymbol, KMalFunction>): KMalType {
         return when (ast) {
             is KMalSymbol -> environment[ast] ?: throw IllegalStateException("symbol $ast is not defined in environment")
             is KMalList -> ast.elements.map { EVAL(it, environment) }.toKMalList()
@@ -25,11 +26,11 @@ object Step2Eval {
         }
     }
 
-    fun EVAL(ast: KMalType, environment: KMalEnvironment): KMalType {
+    fun EVAL(ast: KMalType, environment: Map<KMalSymbol, KMalFunction>): KMalType {
         return when {
             ast !is KMalList -> evalAST(ast, environment)
             ast.size == 0 -> ast
-            else -> lambda@{
+            else -> {
                 val evaluatedAST = evalAST(ast, environment) as KMalList
                 val function = evaluatedAST.first!!
                 if (function !is KMalFunction) throw IllegalStateException("expected function, got ${function.toTypeString()}")
@@ -41,10 +42,18 @@ object Step2Eval {
 
     fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else ast.toString()
 
-    fun REP(input: String, environment: KMalEnvironment): String? = PRINT(EVAL(READ(input), environment))
+    fun REP(input: String, environment: Map<KMalSymbol, KMalFunction>): String? = PRINT(EVAL(READ(input), environment))
 }
 
 fun main() {
+    val replEnvironment: Map<KMalSymbol, KMalFunction> = mapOf(
+        "+".toKMalSymbol() to KMalFunction(Library.kmalAdd),
+        "-".toKMalSymbol() to KMalFunction(Library.kmalSubtract),
+        "*".toKMalSymbol() to KMalFunction(Library.kmalMultiply),
+        "/".toKMalSymbol() to KMalFunction(Library.kmalDivide),
+        "=".toKMalSymbol() to KMalFunction(Library::kmalEquals),
+        "println".toKMalSymbol() to KMalFunction(Library::kmalPrintln)
+    )
     while (true) {
         print("user> ")
         val input = readLine() ?: break
