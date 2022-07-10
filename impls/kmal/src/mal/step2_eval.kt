@@ -9,6 +9,8 @@ import mal.MalTypes.KMalFunction
 import mal.MalTypes.KMalVector
 import mal.MalTypes.toKMalVector
 import mal.MalTypes.KMalHashMap
+import mal.MalTypes.asString
+import mal.MalTypes.asTypeString
 import mal.MalTypes.toKMalMap
 import mal.MalTypes.toKMalSymbol
 import mal.MalTypes.toList
@@ -33,26 +35,26 @@ object Step2Eval {
             else -> {
                 val evaluatedAST = evalAST(ast, environment) as KMalList
                 val function = evaluatedAST.first!!
-                if (function !is KMalFunction) throw IllegalStateException("expected function, got ${function.toTypeString()}")
+                if (function !is KMalFunction) throw IllegalStateException("expected function, got ${asTypeString(function)}")
                 val args = evaluatedAST.rest ?: listOf()
                 return function(args)
             }
         }
     }
 
-    fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else ast.toString()
+    fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else asString(ast, printReadably = true)
 
     fun REP(input: String, environment: Map<KMalSymbol, KMalFunction>): String? = PRINT(EVAL(READ(input), environment))
 }
 
 fun main() {
     val replEnvironment: Map<KMalSymbol, KMalFunction> = mapOf(
-        "+".toKMalSymbol() to KMalFunction(Library.kmalAdd),
-        "-".toKMalSymbol() to KMalFunction(Library.kmalSubtract),
-        "*".toKMalSymbol() to KMalFunction(Library.kmalMultiply),
-        "/".toKMalSymbol() to KMalFunction(Library.kmalDivide),
-        "=".toKMalSymbol() to KMalFunction(Library::kmalEquals),
-        "println".toKMalSymbol() to KMalFunction(Library::kmalPrintln)
+        "+".toKMalSymbol() to KMalFunction(Core.kmalAdd),
+        "-".toKMalSymbol() to KMalFunction(Core.kmalSubtract),
+        "*".toKMalSymbol() to KMalFunction(Core.kmalMultiply),
+        "/".toKMalSymbol() to KMalFunction(Core.kmalDivide),
+        "=".toKMalSymbol() to KMalFunction(Core::kmalEquals),
+        "println".toKMalSymbol() to KMalFunction(Core::kmalPrintln)
     )
     while (true) {
         print("user> ")

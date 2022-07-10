@@ -1,5 +1,6 @@
 package mal
 
+import mal.MalTypes.asString
 import mal.Reader.readAST
 import mal.Step1ReadPrint.REP
 import java.io.EOFException
@@ -9,7 +10,7 @@ object Step1ReadPrint {
 
     fun EVAL(ast: KMalType): KMalType = ast
 
-    fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else ast.toString()
+    fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else asString(ast, printReadably = true)
 
     fun REP(input: String): String? = PRINT(EVAL(READ(input)))
 }

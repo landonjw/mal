@@ -1,8 +1,6 @@
 package mal
 
-interface KMalType {
-    fun toTypeString(): String
-}
+interface KMalType
 
 interface KMalSequence : KMalType {
     val elements: List<KMalType>
@@ -14,54 +12,96 @@ interface KMalSequence : KMalType {
 interface KMalIgnorable : KMalType
 
 object MalTypes {
-    fun getSequenceTypes(elements: List<KMalType>) = elements.joinToString(separator = " ") { it.toTypeString() }
 
-    fun getSequenceString(elements: List<KMalType>) = elements.joinToString(separator = " ") { it.toString() }
+    fun asString(type: KMalType, printReadably: Boolean = false): String {
+        return when (type) {
+            is KMalFunction -> "#<function>"
+            is KMalList -> "(${sequenceAsString(type.elements, printReadably)})"
+            is KMalVector -> "[${sequenceAsString(type.elements, printReadably)}]"
+            is KMalHashMap -> "{${sequenceAsString(type.toList(), printReadably)}}"
+            is KMalString ->
+                if (printReadably) {
+                    "\"${type.value}\""
+                }
+                else {
+                    type.value
+                }
+            is KMalSymbol -> type.value
+            is KMalKeyword -> ":${type.value.substring(1)}"
+            is KMalNumber -> type.value.toString()
+            is KMalBoolean -> type.value.toString()
+            is KMalNil -> "nil"
+            is KMalComment -> ""
+            else -> throw NotImplementedError()
+        }
+    }
+
+    fun asTypeString(type: KMalType): String {
+        return when (type) {
+            is KMalFunction -> "Function"
+            is KMalList -> "List (${sequenceAsTypeString(type.elements)})"
+            is KMalVector -> "Vector [${sequenceAsTypeString(type.elements)}]"
+            is KMalHashMap -> "Map {${sequenceAsTypeString(type.toList())}}"
+            is KMalString -> "String"
+            is KMalSymbol -> "Symbol"
+            is KMalKeyword -> "Keyword"
+            is KMalNumber -> "Number"
+            is KMalBoolean -> "Boolean"
+            is KMalNil -> "Nil"
+            is KMalComment -> "Comment"
+            else -> throw NotImplementedError()
+        }
+    }
+
+    fun sequenceAsString(elements: List<KMalType>, printReadably: Boolean): String {
+        return elements.joinToString(separator = " ") { asString(it, printReadably) }
+    }
+
+    fun sequenceAsTypeString(elements: List<KMalType>): String {
+        return elements.joinToString(separator = " ") { asTypeString(it) }
+    }
+
+    fun isTruthy(value: KMalType): Boolean {
+        return when (value) {
+            is KMalNil -> false
+            is KMalBoolean -> value.value
+            else -> true
+        }
+    }
 
     // KMal Type Definitions
     class KMalFunction(val fn: (List<KMalType>) -> KMalType): KMalType {
-        override fun toTypeString() = "Function"
         operator fun invoke(types: List<KMalType>) = fn(types)
         operator fun invoke(vararg types: KMalType) = invoke(types.toList())
     }
 
     class KMalList(override val elements: List<KMalType>) : KMalSequence {
-        override fun toString() = "(${getSequenceString(elements)})"
-        override fun toTypeString() = "List (${getSequenceTypes(elements)})"
         override fun hashCode() = elements.hashCode()
-        override fun equals(other: Any?) = other is KMalList && other.elements == elements
+        override fun equals(other: Any?) = other is KMalSequence && other.elements == elements
         override val first = elements.firstOrNull()
         override val rest = if (elements.size >= 2) elements.subList(1, elements.size) else null
         override val size = elements.size
     }
 
     class KMalVector(override val elements: List<KMalType>) : KMalSequence {
-        override fun toString() = "[${getSequenceString(elements)}]"
-        override fun toTypeString() = "Vector [${getSequenceTypes(elements)}]"
         override fun hashCode() = elements.hashCode()
-        override fun equals(other: Any?) = other is KMalVector && other.elements == elements
+        override fun equals(other: Any?) = other is KMalSequence && other.elements == elements
         override val first = elements.firstOrNull()
         override val rest = if (elements.size >= 2) elements.subList(1, elements.size) else null
         override val size = elements.size
     }
 
     class KMalHashMap(val elements: Map<KMalType, KMalType>) : KMalType {
-        override fun toString() = "{${getSequenceString(this.toList())}}"
-        override fun toTypeString() = "Map {${getSequenceTypes(this.toList())}}"
         override fun hashCode() = elements.hashCode()
         override fun equals(other: Any?) = other is KMalHashMap && other.elements == elements
     }
 
     open class KMalString(val value: String): KMalType {
-        override fun toString() = "\"$value\""
-        override fun toTypeString() = "String"
         override fun hashCode() = value.hashCode()
         override fun equals(other: Any?) = other is KMalString && other.value == value
     }
 
-    class KMalSymbol(value: String): KMalString(value) {
-        override fun toString() = value
-        override fun toTypeString() = "Symbol"
+    class KMalSymbol(val value: String): KMalType {
         override fun hashCode(): Int = value.hashCode()
         override fun equals(other: Any?) = other is KMalSymbol && other.value == value
     }
@@ -73,36 +113,26 @@ object MalTypes {
             this.value = "\u029E" + value
         }
 
-        override fun toString() = ":" + value.substring(1)
-        override fun toTypeString() = "Keyword"
         override fun hashCode() = value.hashCode()
         override fun equals(other: Any?) = other is KMalKeyword && other.value == value
     }
 
     class KMalNumber(val value: Long): KMalType {
-        override fun toString() = value.toString()
-        override fun toTypeString() = "Number"
         override fun hashCode() = value.hashCode()
         override fun equals(other: Any?) = other is KMalNumber && other.value == value
     }
 
     class KMalBoolean(val value: Boolean): KMalType {
-        override fun toString() = value.toString()
-        override fun toTypeString() = "Boolean"
         override fun hashCode() = value.hashCode()
         override fun equals(other: Any?) = other is KMalBoolean && other.value == value
     }
 
     class KMalNil: KMalType {
-        override fun toString() = "nil"
-        override fun toTypeString() = "Nil"
         override fun hashCode() = "nil".hashCode()
         override fun equals(other: Any?) = other is KMalNil
     }
 
-    class KMalComment: KMalIgnorable {
-        override fun toTypeString() = "Comment"
-    }
+    class KMalComment: KMalIgnorable
 
     // KMal Type Constants
     val KMAL_TRUE = KMalBoolean(true)
@@ -140,4 +170,5 @@ object MalTypes {
         return elements
     }
     fun KMalHashMap.toKMalVector(): KMalVector = KMalVector(this.toList())
+    fun ((List<KMalType>) -> KMalType).toKMalFunction(): KMalFunction = KMalFunction(this)
 }

@@ -5,6 +5,8 @@ import mal.MalTypes.KMalHashMap
 import mal.MalTypes.KMalList
 import mal.MalTypes.KMalSymbol
 import mal.MalTypes.KMalVector
+import mal.MalTypes.asString
+import mal.MalTypes.asTypeString
 import mal.MalTypes.toKMalList
 import mal.MalTypes.toKMalMap
 import mal.MalTypes.toKMalSymbol
@@ -28,7 +30,7 @@ object Step3Eval {
 
     fun defBinding(ast: KMalList, environment: KMalEnvironment): KMalType {
         if (ast.size < 2) throw IllegalStateException("illegal parity of ${ast.size} offered")
-        val name = ast.elements[1] as? KMalSymbol ?: throw IllegalStateException("def! requires a symbol for name, got ${ast.elements[1].toTypeString()}")
+        val name = ast.elements[1] as? KMalSymbol ?: throw IllegalStateException("def! requires a symbol for name, got ${asTypeString(ast.elements[1])}")
         val evaluatedValue = EVAL(ast.elements[2], environment)
         environment.set(name, evaluatedValue)
         return evaluatedValue
@@ -37,11 +39,11 @@ object Step3Eval {
     fun letBinding(ast: KMalList, environment: KMalEnvironment): KMalType {
         if (ast.size != 3) throw IllegalStateException("illegal parity of ${ast.size} offered")
         val childEnvironment = KMalEnvironment(parent = environment)
-        val bindings = ast.elements[1] as? KMalSequence ?: throw IllegalStateException("let* requires a sequence of bindings, got ${ast.elements[1].toTypeString()}")
+        val bindings = ast.elements[1] as? KMalSequence ?: throw IllegalStateException("let* requires a sequence of bindings, got ${asTypeString(ast.elements[1])}")
         if (bindings.size % 2 != 0) throw IllegalStateException("bindings must contain an even number of forms")
         for (i in bindings.elements.indices step 2) {
             val bindingSymbol = bindings.elements[i]
-            if (bindingSymbol !is KMalSymbol) throw IllegalStateException("expected symbol for binding, got ${bindingSymbol.toTypeString()}")
+            if (bindingSymbol !is KMalSymbol) throw IllegalStateException("expected symbol for binding, got ${asTypeString(bindingSymbol)}")
             val binding = Pair(bindingSymbol, EVAL(bindings.elements[i + 1], childEnvironment))
             childEnvironment.set(binding)
         }
@@ -59,7 +61,7 @@ object Step3Eval {
                 else -> {
                     val evaluatedAST = evalAST(ast, environment) as KMalList
                     val function = evaluatedAST.first!!
-                    if (function !is KMalFunction) throw IllegalStateException("expected function, got ${function.toTypeString()}")
+                    if (function !is KMalFunction) throw IllegalStateException("expected function, got ${asTypeString(function)}")
                     val args = evaluatedAST.rest ?: listOf()
                     return function(args)
                 }
@@ -67,7 +69,7 @@ object Step3Eval {
         }
     }
 
-    fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else ast.toString()
+    fun PRINT(ast: KMalType): String? = if (ast is KMalIgnorable) null else asString(ast, printReadably = true)
 
     fun REP(input: String, environment: KMalEnvironment): String? = PRINT(EVAL(READ(input), environment))
 }
@@ -75,12 +77,12 @@ object Step3Eval {
 fun main() {
     val replEnvironment = KMalEnvironment(null).apply {
         this.set(
-            "+".toKMalSymbol() to KMalFunction(Library.kmalAdd),
-            "-".toKMalSymbol() to KMalFunction(Library.kmalSubtract),
-            "*".toKMalSymbol() to KMalFunction(Library.kmalMultiply),
-            "/".toKMalSymbol() to KMalFunction(Library.kmalDivide),
-            "=".toKMalSymbol() to KMalFunction(Library::kmalEquals),
-            "println".toKMalSymbol() to KMalFunction(Library::kmalPrintln)
+            "+".toKMalSymbol() to KMalFunction(Core.kmalAdd),
+            "-".toKMalSymbol() to KMalFunction(Core.kmalSubtract),
+            "*".toKMalSymbol() to KMalFunction(Core.kmalMultiply),
+            "/".toKMalSymbol() to KMalFunction(Core.kmalDivide),
+            "=".toKMalSymbol() to KMalFunction(Core::kmalEquals),
+            "println".toKMalSymbol() to KMalFunction(Core::kmalPrintln)
         )
     }
     while (true) {

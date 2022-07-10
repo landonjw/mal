@@ -1,6 +1,7 @@
 package mal
 
 import mal.MalTypes.KMalSymbol
+import mal.MalTypes.asString
 
 class KMalEnvironment(val parent: KMalEnvironment?) {
     private val mappings: MutableMap<KMalSymbol, KMalType> = mutableMapOf()
@@ -18,5 +19,5 @@ class KMalEnvironment(val parent: KMalEnvironment?) {
         }
     }
 
-    fun get(symbol: KMalSymbol): KMalType = find(symbol) ?: throw IllegalStateException("$symbol not found.")
+    fun get(symbol: KMalSymbol): KMalType = find(symbol) ?: throw IllegalStateException("${asString(symbol)} not found.")
 }

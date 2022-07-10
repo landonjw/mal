@@ -1,5 +1,5 @@
-SOURCES_BASE = reader.kt kmal_types.kt type_coercion.kt kmal_env.kt kmal_library.kt #printer.kt core.kt readline.kt
-SOURCES_LISP = step0_repl.kt step1_read_print.kt step2_eval.kt step3_env.kt #step4_if_fn_do.kt \
+SOURCES_BASE = reader.kt kmal_types.kt type_coercion.kt kmal_env.kt kmal_core.kt #printer.kt core.kt readline.kt
+SOURCES_LISP = step0_repl.kt step1_read_print.kt step2_eval.kt step3_env.kt step4_if_fn_do.kt \
 	# step5_tco.kt step6_file.kt step7_quote.kt step8_macros.kt step9_try.kt stepA_mal.kt
 
 JARS = $(SOURCES_LISP:%.kt=%.jar)
